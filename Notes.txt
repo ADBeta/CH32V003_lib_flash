@@ -73,3 +73,16 @@ while (FLASH->STATR & FLASH_STATR_BSY);
 
 Erase
 *******************************************************************************
+Write FLASH_CTLR->PAGE_ER to signal an erase
+
+Write the address to FLASH_ADDR
+
+Write FLASH_CTLR->STAT to 1 to initiate an erase
+
+Wait for FLASH_CTLR->BSY to be 0
+
+Check FLASH_STATR for errors
+
+FLASH->CTLR = CR_PAGE_ER;
+FLASH->ADDR = (intptr_t)ptr;
+FLASH->CTLR = CR_STRT_Set | CR_PAGE_ER;
