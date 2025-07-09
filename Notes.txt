@@ -20,8 +20,6 @@ Wait for FLASH_STATR->BSY to be 0
 Check FLASH_CTLR->FLOCK - if 1, perform flast unlock procedure
 	-> Write KEY1, **THEN** KEY2 to FLASH_MODEKEYR
 
-FLASH_CTLR->FTPG 0x01 to enable fast mode (PAGE_PG in ch32fun??)
-
 
 Read
 *******************************************************************************
