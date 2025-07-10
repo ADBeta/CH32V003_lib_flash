@@ -15,14 +15,18 @@
 /*** Definitions *************************************************************/
 // Base Address of the Flash
 #define FLASH_MAX_PAGE 256
+#define FLASH_PAGE_SIZE 64
 
 
 /*** Structs & Types *********************************************************/
 typedef enum {
 	FLASH_OK                        = 0x00,
 	FLASH_ERR_LOCKED,
+	FLASH_ERR_UNLOCKED,
 	FLASH_ERR_PAGE_OUT_OF_RANGE,
 	FLASH_ERR_INVALID_PTR,
+
+	FLASH_ERR_ERASE_FAILED,
 
 } flash_err_t;
 
@@ -51,7 +55,10 @@ flash_lock_state_t flash_get_lock_state(void);
 flash_err_t flash_unlock(void);
 
 
-// TODO: Lock feature
+/// @brief Locks the flash
+/// @param None
+/// @return flash_err_t error status, FLASH_OK if successful
+flash_err_t flash_lock(void);
 
 
 /// @brief Reads a page of flash to the passed pointer.
@@ -61,14 +68,16 @@ flash_err_t flash_unlock(void);
 flash_err_t flash_read_page(const size_t page_num, flash_page_t *page_ptr);
 
 
+/// @brief Writes page data to a page of flash
+/// @param page_num, Page to write to (0->256)
+/// @param page_ptr, Data to write
+/// @return flash_err_t error status, FLASH_OK if successful
+flash_err_t flash_write_page(const size_t page_num, const flash_page_t *page_ptr);
 
 
-
-
-
-
-
-
-
+/// @brief Erases a Page of flash
+/// @param page_num, Page to Erase (0->256)
+/// @return flash_err_t error status, FLASH_OK if successful
+flash_err_t flash_erase_page(const size_t page_num);
 
 #endif

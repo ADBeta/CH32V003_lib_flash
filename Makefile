@@ -7,7 +7,7 @@ BUILD_DIR  := ./build
 TOOLKIT    := ./toolkit
 
 # Project name
-TARGET := flash_nvs_demo
+TARGET := lib_flash_demo
 # MCU Name - Only CH32V00x Supported
 TARGET_MCU ?= CH32V003
 
