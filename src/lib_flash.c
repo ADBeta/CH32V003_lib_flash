@@ -1,6 +1,16 @@
 /******************************************************************************
+* CH32V003 lib_flash - simple and lightweight library to support:
+* * FAST_MODE Read
+* * FAST_MODE Write
+* * Erase
+* * Lock
+* * Unlock
 *
+* See GitHub Repo for more information: 
+* https://github.com/ADBeta/CH32V003_lib_flash
 *
+* Released under the MIT Licence
+* Copyright ADBeta (c) 2025
 ******************************************************************************/
 #include "lib_flash.h"
 #include "ch32fun.h"
@@ -67,10 +77,12 @@ flash_err_t flash_read_page(const size_t page_num, flash_page_t *page_ptr)
 	if(page_num > FLASH_MAX_PAGE)
 		return FLASH_ERR_PAGE_OUT_OF_RANGE;
 
-	// Calculate the starting flash pointer
-	const void *fp = (const void*)(FLASH_BASE + (page_num * FLASH_PAGE_SIZE));
+	// Calculate the flash and data pointers
+	volatile const uint32_t *flsh_ptr = (volatile const uint32_t*)(FLASH_BASE + (page_num * FLASH_PAGE_BYTES));
+	uint32_t *data_ptr = (uint32_t*)page_ptr->byte;
 
-	memcpy(page_ptr->byte, fp, sizeof(page_ptr->byte));
+	for(uint8_t w = 0; w < FLASH_PAGE_WORDS; w++)
+		*data_ptr++ = *flsh_ptr++;
 
 	return FLASH_OK;
 }
@@ -84,16 +96,26 @@ flash_err_t flash_write_page(const size_t page_num, const flash_page_t *page_ptr
 	if(page_num > FLASH_MAX_PAGE)
 		return FLASH_ERR_PAGE_OUT_OF_RANGE;
 
-
 	// Clear the buffer
-	FLASH->CTLR = CR_BUF_RST | CR_PAGE_PG;
+	FLASH->CTLR |= CR_BUF_RST | CR_PAGE_PG;
 	while(FLASH->STATR & FLASH_STATR_BSY);
 
-	// Set the Address
-	FLASH->ADDR = FLASH_BASE + (page_num * FLASH_PAGE_SIZE);
+	// Calculate the data and flash pointers, then set the flash addr
+	volatile uint32_t *flsh_ptr = (volatile uint32_t*)(FLASH_BASE + (page_num * FLASH_PAGE_BYTES));
+	const uint32_t *data_ptr = (const uint32_t*)page_ptr->byte;
+	FLASH->ADDR = FLASH_BASE + (page_num * FLASH_PAGE_BYTES);
 
+	// Copy over 16 words, set BUF_LOAD and wait
+	for(uint8_t w = 0; w < FLASH_PAGE_WORDS; w++)
+	{
+		*flsh_ptr++ = *data_ptr++;
+		FLASH->CTLR |= FLASH_CTLR_BUF_LOAD | CR_PAGE_PG;
+		while(FLASH->STATR & FLASH_STATR_BSY);
+	}
 
-	// TODO: write to 32b mem buffer, then buf_load
+	// Start the final write-out and wait
+	FLASH->CTLR |= CR_STRT_Set | CR_PAGE_PG;
+	while(FLASH->STATR & FLASH_STATR_BSY);
 
 	return FLASH_OK;
 }
@@ -104,17 +126,20 @@ flash_err_t flash_erase_page(const size_t page_num)
 	if(page_num > FLASH_MAX_PAGE)
 		return FLASH_ERR_PAGE_OUT_OF_RANGE;
 
-	// Calculate the flash address
-	FLASH->ADDR = FLASH_BASE + (page_num * FLASH_PAGE_SIZE);
+	// Signal an Erase
+	FLASH->CTLR = CR_PAGE_ER;
 
-	// Erase
-	FLASH->CTLR = CR_STRT_Set | CR_PAGE_ER;
+	// Set the flash Address
+	FLASH->ADDR = FLASH_BASE + (page_num * FLASH_PAGE_BYTES);
 
-	// Wait for the operation to finish
+	// Erase and wait
+	FLASH->CTLR |= CR_STRT_Set | CR_PAGE_ER;
 	while(FLASH->STATR & FLASH_STATR_BSY);
 
-	// TODO:
 	// Confirm the Erase has worked
+	const uint32_t *flsh_ptr = (const uint32_t*)(FLASH_BASE + (page_num * FLASH_PAGE_BYTES));
+	for(uint8_t w = 0; w < FLASH_PAGE_WORDS; w++)
+		if(*flsh_ptr++ != 0xFFFFFFFF) return FLASH_ERR_ERASE_FAILED;
 
 	return FLASH_OK;
 }

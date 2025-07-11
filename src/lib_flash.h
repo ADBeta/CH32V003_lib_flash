@@ -1,7 +1,18 @@
 /******************************************************************************
+* CH32V003 lib_flash - simple and lightweight library to support:
+* * FAST_MODE Read
+* * FAST_MODE Write
+* * Erase
+* * Lock
+* * Unlock
 *
+* See GitHub Repo for more information: 
+* https://github.com/ADBeta/CH32V003_lib_flash
 *
+* Released under the MIT Licence
+* Copyright ADBeta (c) 2025
 *
+* Ver 1.0.0    11 Jul 2025
 *
 * NOTE: This library only supports FAST Mode, but abstractions have been done
 * to allow NORM/SLOW mode to be added by some brave soul at a later date
@@ -12,10 +23,12 @@
 #include "ch32fun.h"
 #include <stddef.h>
 
+
 /*** Definitions *************************************************************/
 // Base Address of the Flash
 #define FLASH_MAX_PAGE 256
-#define FLASH_PAGE_SIZE 64
+#define FLASH_PAGE_BYTES 64    // Bytes Per Page
+#define FLASH_PAGE_WORDS 16    // Words Per Page
 
 
 /*** Structs & Types *********************************************************/
@@ -30,6 +43,7 @@ typedef enum {
 
 } flash_err_t;
 
+
 typedef enum {
 	FLASH_LS_LOCKED         = 0x00,  // Flash is completely Locked
 	FLASH_LS_UNLOCKED_NORM,          // NORMAL Mode is Unlocked (CTLR->LOCK)
@@ -41,6 +55,7 @@ typedef enum {
 typedef struct { 
 	uint8_t byte[64];
 } flash_page_t;
+
 
 /*** Functions ***************************************************************/
 /// @brief Returns the Locked State of the Flash. 
@@ -79,5 +94,6 @@ flash_err_t flash_write_page(const size_t page_num, const flash_page_t *page_ptr
 /// @param page_num, Page to Erase (0->256)
 /// @return flash_err_t error status, FLASH_OK if successful
 flash_err_t flash_erase_page(const size_t page_num);
+
 
 #endif
